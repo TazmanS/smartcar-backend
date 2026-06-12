@@ -1,9 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/TazmanS/smartcar-backend/internal/config"
+	"github.com/TazmanS/smartcar-backend/internal/routes"
 )
 
 type Response struct {
@@ -11,27 +13,14 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	response := Response{
-		Status:  "ok",
-		Message: "SmartCar backend is running",
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-}
-
 func main() {
-	http.HandleFunc("/", homeHandler)
+	cfg := config.Load()
+
+	router := routes.NewRouter(cfg.FrontendURL)
 
 	log.Println("Server started on :8080")
 
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(
+		http.ListenAndServe(":8080", router),
+	)
 }
