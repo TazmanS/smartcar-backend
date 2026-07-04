@@ -11,7 +11,9 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o smartcar-backend .
 
 # ---------- Runtime ----------
-FROM alpine:latest
+FROM alpine:3.22
+
+RUN apk add --no-cache wget
 
 WORKDIR /app
 
