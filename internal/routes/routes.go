@@ -13,7 +13,7 @@ func NewRouter(frontendURL string) *chi.Mux {
 	r.Use(middleware.Cors(frontendURL))
 
 	r.Route("/api", func(r chi.Router) {
-		r.Get("/status", handlers.CarStatusHandler)
+		r.Get("/car-status", handlers.CarStatusHandler)
 	})
 
 	return r
