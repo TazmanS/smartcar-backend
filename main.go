@@ -1,5 +1,11 @@
 package main
 
+// @title SmartCar API
+// @version 1.0
+// @description SmartCar Backend API
+// @host localhost:8080
+// @BasePath /
+
 import (
 	"log"
 	"net/http"

@@ -1,9 +1,9 @@
-docker
-
-swagger
-
 health check, not status check
 
 status = some params
 
 timer for health-check
+
+Graceful Shutdown
+
+Prometheus

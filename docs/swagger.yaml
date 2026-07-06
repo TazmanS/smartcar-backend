@@ -1,0 +1,34 @@
+basePath: /
+definitions:
+  handlers.Response:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: SmartCar Backend API
+  title: SmartCar API
+  version: "1.0"
+paths:
+  /api/car-status:
+    get:
+      description: Returns current car status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Get car status
+      tags:
+      - Car
+swagger: "2.0"

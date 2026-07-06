@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "Generating Swagger..."
+
+swag init -g main.go
+
+git add docs/
+
+echo "Done."
