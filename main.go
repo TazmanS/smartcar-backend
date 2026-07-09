@@ -22,11 +22,11 @@ type Response struct {
 func main() {
 	cfg := config.Load()
 
-	router := routes.NewRouter(cfg.FrontendURL)
+	router := routes.NewRouter()
 
-	log.Println("Server started on :8080")
+	log.Println("Server started on", cfg.PORT)
 
 	log.Fatal(
-		http.ListenAndServe(":8080", router),
+		http.ListenAndServe(cfg.PORT, router),
 	)
 }

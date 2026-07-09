@@ -7,7 +7,7 @@ Backend service for an ESP32-based SmartCar.
 Create `.env`:
 
 ```env
-FRONTEND_URL=http://localhost:1234
+PORT=:8080
 ```
 
 Start the server:
@@ -19,5 +19,5 @@ go run .
 The API will be available at:
 
 ```text
-http://localhost:8080
+http://localhost:PORT
 ```

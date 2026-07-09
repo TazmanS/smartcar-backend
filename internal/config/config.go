@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	FrontendURL string
+	PORT string
 }
 
 func Load() *Config {
@@ -19,6 +19,6 @@ func Load() *Config {
 	}
 
 	return &Config{
-		FrontendURL: os.Getenv("FRONTEND_URL"),
+		PORT: os.Getenv("PORT"),
 	}
 }
