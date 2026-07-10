@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/TazmanS/smartcar-backend/internal/config"
+	"github.com/TazmanS/smartcar-backend/internal/database"
 	"github.com/TazmanS/smartcar-backend/internal/routes"
 )
 
@@ -21,6 +22,12 @@ type Response struct {
 
 func main() {
 	cfg := config.Load()
+
+	db, err := database.Connect(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	router := routes.NewRouter()
 
