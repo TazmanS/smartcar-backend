@@ -4,12 +4,18 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/services"
 )
 
-type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
+type CarHandler struct {
+	service *services.CarService
+}
+
+func NewCarHandler(app *app.App) *CarHandler {
+	return &CarHandler{
+		service: services.NewCarService(app),
+	}
 }
 
 // CarStatusHandler godoc
@@ -18,11 +24,11 @@ type Response struct {
 //	@Description	Returns current car status
 //	@Tags			Car
 //	@Produce		json
-//	@Success		200	{object}	Response
-//	@Failure		500	{object}	Response
+//	@Success		200	{object}	models.CarStatusResponse
+//	@Failure		500	{object}	models.CarStatusResponse
 //	@Router			/api/car-status [get]
-func CarStatusHandler(w http.ResponseWriter, r *http.Request) {
-	response := services.GetCarStatusService()
+func (h *CarHandler) GetCarStatus(w http.ResponseWriter, r *http.Request) {
+	response := h.service.GetCarStatus()
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -33,5 +39,11 @@ func CarStatusHandler(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 		)
 		return
+	}
+}
+
+func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
+	if err := h.service.CarStream(w, r); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

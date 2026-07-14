@@ -15,6 +15,11 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBSSLMode  string
+
+	MQTTHost string
+	MQTTPort string
+
+	ESP32URL string
 }
 
 func Load() *Config {
@@ -22,12 +27,15 @@ func Load() *Config {
 
 	return &Config{
 		PORT:       getEnv("PORT", ":8080"),
-		DBHost:     getEnv("DBHost", "localhost"),
-		DBPort:     getEnv("DBPort", "5432"),
-		DBName:     getEnv("DBName", "smartcar"),
-		DBUser:     getEnv("DBUser", "admin"),
-		DBPassword: getEnv("DBPassword", "password"),
-		DBSSLMode:  getEnv("DBSSLMode", "disable"),
+		DBHost:     getEnv("DB_HOST", "localhost"),
+		DBPort:     getEnv("DB_PORT", "5432"),
+		DBName:     getEnv("DB_NAME", "smartcar"),
+		DBUser:     getEnv("DB_USER", "admin"),
+		DBPassword: getEnv("DB_PASSWORD", "password"),
+		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
+		MQTTHost:   getEnv("MQTT_HOST", "localhost"),
+		MQTTPort:   getEnv("MQTT_PORT", "1883"),
+		ESP32URL:   getEnv("ESP32_URL", "http://192.168.31.111"),
 	}
 }
 

@@ -10,8 +10,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/config"
 	"github.com/TazmanS/smartcar-backend/internal/database"
+	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	"github.com/TazmanS/smartcar-backend/internal/routes"
 )
 
@@ -29,7 +31,19 @@ func main() {
 	}
 	defer db.Close()
 
-	router := routes.NewRouter()
+	mqttClient, err := mqtt.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer mqttClient.Close()
+
+	app := &app.App{
+		DB:     db,
+		MQTT:   mqttClient,
+		Config: cfg,
+	}
+
+	router := routes.NewRouter(app)
 
 	log.Println("Server started on", cfg.PORT)
 

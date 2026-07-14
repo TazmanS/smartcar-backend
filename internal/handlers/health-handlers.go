@@ -4,10 +4,21 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/models"
 )
 
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
+type HealthHandler struct {
+	app *app.App
+}
+
+func NewHealthHandler(app *app.App) *HealthHandler {
+	return &HealthHandler{
+		app: app,
+	}
+}
+
+func (h *HealthHandler) Get(w http.ResponseWriter, r *http.Request) {
 	response := models.HealthResponse{
 		Status: "ok",
 	}

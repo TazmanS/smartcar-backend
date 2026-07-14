@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  handlers.Response:
+  models.CarStatusResponse:
     properties:
       message:
         type: string
@@ -23,11 +23,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.Response'
+            $ref: '#/definitions/models.CarStatusResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handlers.Response'
+            $ref: '#/definitions/models.CarStatusResponse'
       summary: Get car status
       tags:
       - Car

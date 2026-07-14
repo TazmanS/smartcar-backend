@@ -29,13 +29,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.Response"
+                            "$ref": "#/definitions/models.CarStatusResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.Response"
+                            "$ref": "#/definitions/models.CarStatusResponse"
                         }
                     }
                 }
@@ -43,7 +43,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.Response": {
+        "models.CarStatusResponse": {
             "type": "object",
             "properties": {
                 "message": {
