@@ -15,6 +15,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/car-actions": {
+            "post": {
+                "description": "Send action to the car via MQTT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Car"
+                ],
+                "summary": "Send car action",
+                "parameters": [
+                    {
+                        "description": "Car action",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CarActionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/car-status": {
             "get": {
                 "description": "Returns current car status",
@@ -40,9 +83,54 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/car-stream": {
+            "get": {
+                "description": "Returns current car stream",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Car"
+                ],
+                "summary": "Get car camera stream",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "models.CarAction": {
+            "type": "string",
+            "enum": [
+                "forward",
+                "backward",
+                "left",
+                "right",
+                "stop"
+            ],
+            "x-enum-varnames": [
+                "CarActionForward",
+                "CarActionBackward",
+                "CarActionLeft",
+                "CarActionRight",
+                "CarActionStop"
+            ]
+        },
+        "models.CarActionRequest": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/models.CarAction"
+                }
+            }
+        },
         "models.CarStatusResponse": {
             "type": "object",
             "properties": {

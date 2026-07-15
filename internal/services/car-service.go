@@ -1,6 +1,8 @@
 package services
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -43,4 +45,21 @@ func (s *CarService) CarStream(w http.ResponseWriter, r *http.Request) error {
 	proxy.ServeHTTP(w, r)
 
 	return nil
+}
+
+func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
+	var request models.CarActionRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return err
+	}
+
+	if !request.Action.IsValid() {
+		return errors.New("invalid action")
+	}
+
+	return s.app.MQTT.Publish(
+		s.app.Config.MQTTActions,
+		string(request.Action),
+	)
 }

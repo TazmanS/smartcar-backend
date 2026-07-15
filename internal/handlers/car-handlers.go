@@ -18,7 +18,7 @@ func NewCarHandler(app *app.App) *CarHandler {
 	}
 }
 
-// CarStatusHandler godoc
+// GetCarStatus godoc
 //
 //	@Summary		Get car status
 //	@Description	Returns current car status
@@ -42,8 +42,35 @@ func (h *CarHandler) GetCarStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CarStream godoc
+//
+//	@Summary		Get car camera stream
+//	@Description	Returns current car stream
+//	@Tags			Car
+//	@Produce		json
+//	@Success		200
+//	@Failure		500
+//	@Router			/api/car-stream [get]
 func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.CarStream(w, r); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// CarActions godoc
+//
+//	@Summary		Send car action
+//	@Description	Send action to the car via MQTT
+//	@Tags			Car
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.CarActionRequest	true	"Car action"
+//	@Success		200
+//	@Failure		400	{string}	string	"Bad Request"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/api/car-actions [post]
+func (h *CarHandler) CarActions(w http.ResponseWriter, r *http.Request) {
+	if err := h.service.CarActions(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

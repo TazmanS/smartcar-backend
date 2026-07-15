@@ -16,8 +16,9 @@ type Config struct {
 	DBPassword string
 	DBSSLMode  string
 
-	MQTTHost string
-	MQTTPort string
+	MQTTHost    string
+	MQTTPort    string
+	MQTTActions string
 
 	ESP32URL string
 }
@@ -26,16 +27,17 @@ func Load() *Config {
 	_ = godotenv.Load()
 
 	return &Config{
-		PORT:       getEnv("PORT", ":8080"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBName:     getEnv("DB_NAME", "smartcar"),
-		DBUser:     getEnv("DB_USER", "admin"),
-		DBPassword: getEnv("DB_PASSWORD", "password"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		MQTTHost:   getEnv("MQTT_HOST", "localhost"),
-		MQTTPort:   getEnv("MQTT_PORT", "1883"),
-		ESP32URL:   getEnv("ESP32_URL", "http://192.168.31.111"),
+		PORT:        getEnv("PORT", ":8080"),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		DBName:      getEnv("DB_NAME", "smartcar"),
+		DBUser:      getEnv("DB_USER", "admin"),
+		DBPassword:  getEnv("DB_PASSWORD", "password"),
+		DBSSLMode:   getEnv("DB_SSLMODE", "disable"),
+		MQTTHost:    getEnv("MQTT_HOST", "localhost"),
+		MQTTPort:    getEnv("MQTT_PORT", "1883"),
+		MQTTActions: getEnv("MQTT_ACTIONS", "smartcar/actions"),
+		ESP32URL:    getEnv("ESP32_URL", "http://192.168.31.111"),
 	}
 }
 

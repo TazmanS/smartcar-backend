@@ -1,5 +1,24 @@
 basePath: /
 definitions:
+  models.CarAction:
+    enum:
+    - forward
+    - backward
+    - left
+    - right
+    - stop
+    type: string
+    x-enum-varnames:
+    - CarActionForward
+    - CarActionBackward
+    - CarActionLeft
+    - CarActionRight
+    - CarActionStop
+  models.CarActionRequest:
+    properties:
+      action:
+        $ref: '#/definitions/models.CarAction'
+    type: object
   models.CarStatusResponse:
     properties:
       message:
@@ -14,6 +33,34 @@ info:
   title: SmartCar API
   version: "1.0"
 paths:
+  /api/car-actions:
+    post:
+      consumes:
+      - application/json
+      description: Send action to the car via MQTT
+      parameters:
+      - description: Car action
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CarActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Send car action
+      tags:
+      - Car
   /api/car-status:
     get:
       description: Returns current car status
@@ -29,6 +76,19 @@ paths:
           schema:
             $ref: '#/definitions/models.CarStatusResponse'
       summary: Get car status
+      tags:
+      - Car
+  /api/car-stream:
+    get:
+      description: Returns current car stream
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: Get car camera stream
       tags:
       - Car
 swagger: "2.0"

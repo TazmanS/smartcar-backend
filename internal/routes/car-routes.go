@@ -11,4 +11,5 @@ func RegisterCarRoutes(r chi.Router, app *app.App) {
 
 	r.Get("/car-status", handler.GetCarStatus)
 	r.Get("/car-stream", handler.CarStream)
+	r.Post("/car-actions", handler.CarActions)
 }
