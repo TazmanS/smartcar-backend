@@ -1,4 +1,4 @@
-package services
+package cars
 
 import (
 	"encoding/json"
@@ -8,7 +8,8 @@ import (
 	"net/url"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
-	"github.com/TazmanS/smartcar-backend/internal/models"
+	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
+	"github.com/google/uuid"
 )
 
 type CarService struct {
@@ -21,8 +22,8 @@ func NewCarService(app *app.App) *CarService {
 	}
 }
 
-func (s *CarService) GetCarStatus() models.CarStatusResponse {
-	return models.CarStatusResponse{
+func (s *CarService) GetCarStatus() dto.CarsStatusResponse {
+	return dto.CarsStatusResponse{
 		Status:  "ok",
 		Message: "SmartCar backend is running!",
 	}
@@ -48,7 +49,7 @@ func (s *CarService) CarStream(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
-	var request models.CarActionRequest
+	var request dto.CarActionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return err
@@ -62,4 +63,10 @@ func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
 		s.app.Config.MQTTActions,
 		string(request.Action),
 	)
+}
+
+func CarGetSessionIdService() string {
+	//mqttClient.Publish("smartcar/session_id", "session_id: 123")
+	sessionID := uuid.New().String()
+	return sessionID
 }

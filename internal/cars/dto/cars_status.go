@@ -1,6 +1,6 @@
-package models
+package dto
 
-type CarStatusResponse struct {
+type CarsStatusResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }

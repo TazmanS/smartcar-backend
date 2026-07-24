@@ -2,6 +2,8 @@ package routes
 
 import (
 	"github.com/TazmanS/smartcar-backend/internal/app"
+	"github.com/TazmanS/smartcar-backend/internal/cars"
+	"github.com/TazmanS/smartcar-backend/internal/health"
 	"github.com/TazmanS/smartcar-backend/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
@@ -19,10 +21,9 @@ func NewRouter(app *app.App) *chi.Mux {
 	r.Get("/swagger/*", httpSwagger.Handler())
 
 	r.Route("/api", func(api chi.Router) {
-		RegisterHealthRoutes(api, app)
+		health.RegisterHealthRoutes(api, app)
 
-		RegisterCarRoutes(api, app)
-
+		cars.RegisterCarRoutes(api, app)
 	})
 
 	return r

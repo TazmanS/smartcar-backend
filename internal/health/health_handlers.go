@@ -1,11 +1,11 @@
-package handlers
+package health
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
-	"github.com/TazmanS/smartcar-backend/internal/models"
+	"github.com/TazmanS/smartcar-backend/internal/health/dto"
 )
 
 type HealthHandler struct {
@@ -19,7 +19,7 @@ func NewHealthHandler(app *app.App) *HealthHandler {
 }
 
 func (h *HealthHandler) Get(w http.ResponseWriter, r *http.Request) {
-	response := models.HealthResponse{
+	response := dto.HealthResponse{
 		Status: "ok",
 	}
 

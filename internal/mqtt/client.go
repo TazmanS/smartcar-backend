@@ -55,6 +55,13 @@ func (c *Client) Close() {
 	c.client.Disconnect(250)
 }
 
+func (c *Client) Subscribe(topic string, handler mqtt.MessageHandler) error {
+	token := c.client.Subscribe(topic, 0, handler)
+	token.Wait()
+
+	return token.Error()
+}
+
 func (c *Client) Publish(topic string, payload string) error {
 	token := c.client.Publish(topic, 0, false, payload)
 	token.Wait()

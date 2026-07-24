@@ -1,20 +1,20 @@
-package handlers
+package cars
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
-	"github.com/TazmanS/smartcar-backend/internal/services"
+	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
 )
 
 type CarHandler struct {
-	service *services.CarService
+	service *CarService
 }
 
 func NewCarHandler(app *app.App) *CarHandler {
 	return &CarHandler{
-		service: services.NewCarService(app),
+		service: NewCarService(app),
 	}
 }
 
@@ -73,4 +73,14 @@ func (h *CarHandler) CarActions(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.CarActions(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func CarGetSessionIdHandler(app *app.App, payload dto.CarsSessionRequest) {
+	if payload.Key != app.Config.MQTTCarSessionKey {
+		// save to logs the information
+		return
+	}
+
+	CarGetSessionIdService()
+
 }
