@@ -7,24 +7,18 @@ package main
 // @BasePath /
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars"
-	cars_dto "github.com/TazmanS/smartcar-backend/internal/cars/dto"
 	"github.com/TazmanS/smartcar-backend/internal/config"
 	"github.com/TazmanS/smartcar-backend/internal/database"
+	"github.com/TazmanS/smartcar-backend/internal/health"
 	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	"github.com/TazmanS/smartcar-backend/internal/routes"
-	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/go-chi/chi/v5"
 )
-
-type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
 
 func main() {
 	cfg := config.Load()
@@ -47,35 +41,24 @@ func main() {
 		Config: cfg,
 	}
 
-	err = mqttClient.Subscribe(cfg.MQTTCarSessionSub, func(client paho.Client, msg paho.Message) {
-		handleSessionMessage(mqttClient, app, client, msg)
-	})
+	carsRepo := cars.NewRepository(app.DB)
+	carsHandler := cars.NewCarHandler(carsRepo)
+	carsMQTTHandler := cars.NewMQTTHandler(app, carsHandler)
 
-	if err != nil {
+	if err := mqttClient.Subscribe(cfg.MQTTCarSessionSub, carsMQTTHandler.HandleMQTTSessionMessage); err != nil {
 		log.Fatal(err)
 	}
 
-	router := routes.NewRouter(app)
+	router := routes.NewRouter()
+
+	router.Route("/api", func(api chi.Router) {
+		health.RegisterHealthRoutes(api)
+		cars.RegisterCarRoutes(api, carsHandler)
+	})
 
 	log.Println("Server started on", cfg.PORT)
 
 	log.Fatal(
 		http.ListenAndServe(cfg.PORT, router),
 	)
-}
-
-func handleSessionMessage(mqttClient *mqtt.Client, app *app.App, client paho.Client, msg paho.Message) {
-	log.Printf("Topic: %s", msg.Topic())
-	log.Printf("Payload: %s", string(msg.Payload()))
-
-	if msg.Topic() == app.Config.MQTTCarSessionSub {
-		var req cars_dto.CarsSessionRequest
-
-		err := json.Unmarshal(msg.Payload(), &req)
-		if err != nil {
-			log.Printf("Invalid JSON: %v", err)
-			return
-		}
-		cars.CarGetSessionIdHandler(app, req)
-	}
 }

@@ -1,6 +1,7 @@
 package cars
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,16 +10,18 @@ import (
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
+	"github.com/TazmanS/smartcar-backend/internal/cars/models"
 	"github.com/google/uuid"
 )
 
 type CarService struct {
-	app *app.App
+	app  *app.App
+	repo *Repository
 }
 
-func NewCarService(app *app.App) *CarService {
+func NewCarService(repo *Repository) *CarService {
 	return &CarService{
-		app: app,
+		repo: repo,
 	}
 }
 
@@ -65,8 +68,18 @@ func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
 	)
 }
 
-func CarGetSessionIdService() string {
+func (s *CarService) CarGetSessionIdService(ctx context.Context) (string, error) {
 	//mqttClient.Publish("smartcar/session_id", "session_id: 123")
 	sessionID := uuid.New().String()
-	return sessionID
+
+	car := &models.Car{
+		ID:   sessionID,
+		Name: "Tesla",
+	}
+
+	if err := s.repo.Create(ctx, car); err != nil {
+		return "", err
+	}
+
+	return sessionID, nil
 }
