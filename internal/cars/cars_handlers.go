@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
 )
 
@@ -12,9 +13,9 @@ type CarHandler struct {
 	service *CarService
 }
 
-func NewCarHandler(repo *Repository) *CarHandler {
+func NewCarHandler(app *app.App, repo *Repository) *CarHandler {
 	return &CarHandler{
-		service: NewCarService(repo),
+		service: NewCarService(app, repo),
 	}
 }
 
@@ -24,10 +25,11 @@ func NewCarHandler(repo *Repository) *CarHandler {
 //	@Description	Returns current car status
 //	@Tags			Car
 //	@Produce		json
-//	@Success		200	{object}	models.CarStatusResponse
-//	@Failure		500	{object}	models.CarStatusResponse
+//	@Success		200	{object}	dto.CarStatusResponse
+//	@Failure		500	{object}	dto.CarStatusResponse
 //	@Router			/api/car-status [get]
 func (h *CarHandler) GetCarStatus(w http.ResponseWriter, r *http.Request) {
+	// id := chi.URLParam(r, "id")
 	response := h.service.GetCarStatus()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -64,7 +66,7 @@ func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Car
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		models.CarActionRequest	true	"Car action"
+//	@Param			request	body		dto.CarActionRequest	true	"Car action"
 //	@Success		200
 //	@Failure		400	{string}	string	"Bad Request"
 //	@Failure		500	{string}	string	"Internal Server Error"
@@ -75,15 +77,54 @@ func (h *CarHandler) CarActions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *CarHandler) CarGetSessionIdHandler(ctx context.Context, payload dto.CarsSessionRequest) string {
-	if payload.Key != h.service.app.Config.MQTTCarSessionKey {
-		return ""
+// GetCarsList godoc
+//
+//	@Summary		Get paginated list of cars
+//	@Description	Returns a paginated list of registered cars
+//	@Tags			Car
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.GetCarsListRequest	true	"Pagination parameters"
+//	@Success		200		{object}	dto.GetCarsListResponse
+//	@Failure		400		{string}	string	"Bad Request"
+//	@Failure		500		{string}	string	"Internal Server Error"
+//	@Router			/api/cars/list [post]
+func (h *CarHandler) GetCarsList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req dto.GetCarsListRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	sessionID, err := h.service.CarGetSessionIdService(ctx)
+	cars, err := h.service.GetCarsList(ctx, &req)
 	if err != nil {
-		return ""
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(cars); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *CarHandler) CarGetSessionId(ctx context.Context, payload dto.CarsSessionRequest) string {
+	if payload.Key != h.service.app.Config.MQTTCarSessionKey {
+		return "Wrong session key"
+	}
+
+	sessionID, err := h.service.CarGetSessionId(ctx)
+	if err != nil {
+		return err.Error()
 	}
 
 	return sessionID
+}
+
+func (h *CarHandler) CarHeartbeat(ctx context.Context, req dto.CarsHeartbeatRequest) error {
+	return h.service.CarHeartbeat(ctx, req)
 }

@@ -7,8 +7,15 @@ import (
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	cars_dto "github.com/TazmanS/smartcar-backend/internal/cars/dto"
+	"github.com/TazmanS/smartcar-backend/internal/logger"
+	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
+
+type SessionIDResponse struct {
+	SessionID string `json:"session_id"`
+	RandomID  uint32 `json:"random_id"`
+}
 
 type MQTTHandler struct {
 	app     *app.App
@@ -23,12 +30,9 @@ func NewMQTTHandler(app *app.App, handler *CarHandler) *MQTTHandler {
 }
 
 func (h *MQTTHandler) HandleMQTTSessionMessage(client paho.Client, msg paho.Message) {
-	log.Printf("Topic: %s", msg.Topic())
-	log.Printf("Payload: %s", string(msg.Payload()))
-
-	if msg.Topic() != h.app.Config.MQTTCarSessionSub {
-		return
-	}
+	logger.Info("Session received",
+		"topic", msg.Topic(),
+		"payload", string(msg.Payload()))
 
 	ctx := context.Background()
 	var req cars_dto.CarsSessionRequest
@@ -38,7 +42,29 @@ func (h *MQTTHandler) HandleMQTTSessionMessage(client paho.Client, msg paho.Mess
 		return
 	}
 
-	sessionID := h.handler.CarGetSessionIdHandler(ctx, req)
+	sessionID := h.handler.CarGetSessionId(ctx, req)
 
-	_ = sessionID
+	msgPublish, _ := json.Marshal(SessionIDResponse{
+		SessionID: sessionID,
+		RandomID:  req.RandomID,
+	})
+	h.app.MQTT.Publish(mqtt.MQTTTopicSession, string(msgPublish))
+}
+
+func (h *MQTTHandler) HandleMQTTHeartbeat(client paho.Client, msg paho.Message) {
+	logger.Info("Heartbeat received",
+		"topic", msg.Topic(),
+		"payload", string(msg.Payload()))
+
+	ctx := context.Background()
+	var req cars_dto.CarsHeartbeatRequest
+
+	if err := json.Unmarshal(msg.Payload(), &req); err != nil {
+		log.Printf("Invalid JSON: %v", err)
+		return
+	}
+
+	if err := h.handler.CarHeartbeat(ctx, req); err != nil {
+		log.Printf("Failed to process heartbeat: %v", err)
+	}
 }

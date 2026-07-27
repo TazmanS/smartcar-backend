@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -11,22 +12,47 @@ import (
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
 	"github.com/TazmanS/smartcar-backend/internal/cars/models"
+	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	"github.com/google/uuid"
 )
+
+var carNames = []string{
+	"Tesla",
+	"Mustang",
+	"Camaro",
+	"Corvette",
+	"Supra",
+	"Skyline",
+	"Civic",
+	"Impreza",
+	"Eclipse",
+	"RX-7",
+	"Charger",
+	"Challenger",
+	"Viper",
+	"GT-R",
+	"Focus RS",
+	"Lancer",
+	"Miata",
+	"Silvia",
+	"NSX",
+	"911",
+}
 
 type CarService struct {
 	app  *app.App
 	repo *Repository
 }
 
-func NewCarService(repo *Repository) *CarService {
+func NewCarService(app *app.App, repo *Repository) *CarService {
 	return &CarService{
+		app:  app,
 		repo: repo,
 	}
 }
 
-func (s *CarService) GetCarStatus() dto.CarsStatusResponse {
-	return dto.CarsStatusResponse{
+func (s *CarService) GetCarStatus() dto.CarStatusResponse {
+	return dto.CarStatusResponse{
 		Status:  "ok",
 		Message: "SmartCar backend is running!",
 	}
@@ -63,18 +89,17 @@ func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return s.app.MQTT.Publish(
-		s.app.Config.MQTTActions,
+		mqtt.MQTTTopicActions,
 		string(request.Action),
 	)
 }
 
-func (s *CarService) CarGetSessionIdService(ctx context.Context) (string, error) {
-	//mqttClient.Publish("smartcar/session_id", "session_id: 123")
+func (s *CarService) CarGetSessionId(ctx context.Context) (string, error) {
 	sessionID := uuid.New().String()
 
 	car := &models.Car{
 		ID:   sessionID,
-		Name: "Tesla",
+		Name: carNames[rand.Intn(len(carNames))],
 	}
 
 	if err := s.repo.Create(ctx, car); err != nil {
@@ -82,4 +107,39 @@ func (s *CarService) CarGetSessionIdService(ctx context.Context) (string, error)
 	}
 
 	return sessionID, nil
+}
+
+func (s *CarService) CarHeartbeat(ctx context.Context, req dto.CarsHeartbeatRequest) error {
+	return s.repo.CarHeartbeat(ctx, req)
+}
+
+func (s *CarService) GetCarsList(ctx context.Context, req *dto.GetCarsListRequest) (*dto.GetCarsListResponse, error) {
+	if req.Page < 1 {
+		req.Page = 1
+	}
+
+	if req.PerPage <= 0 {
+		req.PerPage = 20
+	}
+
+	if req.PerPage > 100 {
+		req.PerPage = 100
+	}
+
+	cars, totalItems, err := s.repo.GetCarsList(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := (totalItems + req.PerPage - 1) / req.PerPage
+
+	return &dto.GetCarsListResponse{
+		Data: cars,
+		Page: dto.PageInfo{
+			Page:       req.Page,
+			PerPage:    req.PerPage,
+			TotalItems: totalItems,
+			TotalPages: totalPages,
+		},
+	}, nil
 }

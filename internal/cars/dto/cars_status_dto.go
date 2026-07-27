@@ -1,6 +1,6 @@
 package dto
 
-type CarsStatusResponse struct {
+type CarStatusResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 }

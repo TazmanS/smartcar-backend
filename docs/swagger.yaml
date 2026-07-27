@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  models.CarAction:
+  dto.CarAction:
     enum:
     - forward
     - backward
@@ -14,16 +14,63 @@ definitions:
     - CarActionLeft
     - CarActionRight
     - CarActionStop
-  models.CarActionRequest:
+  dto.CarActionRequest:
     properties:
       action:
-        $ref: '#/definitions/models.CarAction'
+        $ref: '#/definitions/dto.CarAction'
     type: object
-  models.CarStatusResponse:
+  dto.CarStatusResponse:
     properties:
       message:
         type: string
       status:
+        type: string
+    type: object
+  dto.GetCarsListRequest:
+    properties:
+      order:
+        description: asc | desc
+        type: string
+      page:
+        type: integer
+      per_page:
+        type: integer
+      search:
+        type: string
+      sort_by:
+        type: string
+    type: object
+  dto.GetCarsListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Car'
+        type: array
+      page:
+        $ref: '#/definitions/dto.PageInfo'
+    type: object
+  dto.PageInfo:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  models.Car:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      lastSeen:
+        type: string
+      name:
+        type: string
+      updatedAt:
         type: string
     type: object
 host: localhost:8080
@@ -44,7 +91,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.CarActionRequest'
+          $ref: '#/definitions/dto.CarActionRequest'
       produces:
       - application/json
       responses:
@@ -70,11 +117,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.CarStatusResponse'
+            $ref: '#/definitions/dto.CarStatusResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.CarStatusResponse'
+            $ref: '#/definitions/dto.CarStatusResponse'
       summary: Get car status
       tags:
       - Car
@@ -89,6 +136,36 @@ paths:
         "500":
           description: Internal Server Error
       summary: Get car camera stream
+      tags:
+      - Car
+  /api/cars/list:
+    post:
+      consumes:
+      - application/json
+      description: Returns a paginated list of registered cars
+      parameters:
+      - description: Pagination parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetCarsListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GetCarsListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get paginated list of cars
       tags:
       - Car
 swagger: "2.0"

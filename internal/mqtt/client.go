@@ -9,6 +9,12 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+const (
+	MQTTTopicActions   = "smartcar/actions"
+	MQTTTopicSession   = "smartcar/session_id"
+	MQTTTopicHeartbeat = "smartcar/heartbeat"
+)
+
 type Client struct {
 	client mqtt.Client
 }

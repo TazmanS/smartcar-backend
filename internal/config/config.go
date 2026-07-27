@@ -18,8 +18,6 @@ type Config struct {
 
 	MQTTHost          string
 	MQTTPort          string
-	MQTTActions       string
-	MQTTCarSessionSub string
 	MQTTCarSessionKey string
 
 	ESP32URL string
@@ -38,8 +36,6 @@ func Load() *Config {
 		DBSSLMode:         getEnv("DB_SSLMODE", "disable"),
 		MQTTHost:          getEnv("MQTT_HOST", "localhost"),
 		MQTTPort:          getEnv("MQTT_PORT", "1883"),
-		MQTTActions:       getEnv("MQTT_ACTIONS", "smartcar/actions"),
-		MQTTCarSessionSub: getEnv("MQTT_CAR_SESSION_SUB", "smartcar/session_id"),
 		MQTTCarSessionKey: getEnv("MQTT_CAR_SESSION_KEY", "smartcar-esp32"),
 		ESP32URL:          getEnv("ESP32_URL", "http://192.168.31.111"),
 	}

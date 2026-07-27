@@ -42,10 +42,14 @@ func main() {
 	}
 
 	carsRepo := cars.NewRepository(app.DB)
-	carsHandler := cars.NewCarHandler(carsRepo)
+	carsHandler := cars.NewCarHandler(app, carsRepo)
 	carsMQTTHandler := cars.NewMQTTHandler(app, carsHandler)
 
-	if err := mqttClient.Subscribe(cfg.MQTTCarSessionSub, carsMQTTHandler.HandleMQTTSessionMessage); err != nil {
+	if err := mqttClient.Subscribe(mqtt.MQTTTopicSession, carsMQTTHandler.HandleMQTTSessionMessage); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := mqttClient.Subscribe(mqtt.MQTTTopicHeartbeat, carsMQTTHandler.HandleMQTTHeartbeat); err != nil {
 		log.Fatal(err)
 	}
 
@@ -53,7 +57,7 @@ func main() {
 
 	router.Route("/api", func(api chi.Router) {
 		health.RegisterHealthRoutes(api)
-		cars.RegisterCarRoutes(api, carsHandler)
+		cars.RegisterCarsRoutes(api, carsHandler)
 	})
 
 	log.Println("Server started on", cfg.PORT)

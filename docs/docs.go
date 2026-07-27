@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.CarActionRequest"
+                            "$ref": "#/definitions/dto.CarActionRequest"
                         }
                     }
                 ],
@@ -72,13 +72,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.CarStatusResponse"
+                            "$ref": "#/definitions/dto.CarStatusResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.CarStatusResponse"
+                            "$ref": "#/definitions/dto.CarStatusResponse"
                         }
                     }
                 }
@@ -103,10 +103,56 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/cars/list": {
+            "post": {
+                "description": "Returns a paginated list of registered cars",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Car"
+                ],
+                "summary": "Get paginated list of cars",
+                "parameters": [
+                    {
+                        "description": "Pagination parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetCarsListRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetCarsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "models.CarAction": {
+        "dto.CarAction": {
             "type": "string",
             "enum": [
                 "forward",
@@ -123,21 +169,93 @@ const docTemplate = `{
                 "CarActionStop"
             ]
         },
-        "models.CarActionRequest": {
+        "dto.CarActionRequest": {
             "type": "object",
             "properties": {
                 "action": {
-                    "$ref": "#/definitions/models.CarAction"
+                    "$ref": "#/definitions/dto.CarAction"
                 }
             }
         },
-        "models.CarStatusResponse": {
+        "dto.CarStatusResponse": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GetCarsListRequest": {
+            "type": "object",
+            "properties": {
+                "order": {
+                    "description": "asc | desc",
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "search": {
+                    "type": "string"
+                },
+                "sort_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GetCarsListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Car"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/dto.PageInfo"
+                }
+            }
+        },
+        "dto.PageInfo": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Car": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastSeen": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }
