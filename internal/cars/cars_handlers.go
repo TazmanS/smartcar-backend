@@ -7,6 +7,8 @@ import (
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type CarHandler struct {
@@ -19,29 +21,34 @@ func NewCarHandler(app *app.App, repo *Repository) *CarHandler {
 	}
 }
 
-// GetCarStatus godoc
+// GetCarInfo godoc
 //
-//	@Summary		Get car status
-//	@Description	Returns current car status
+//	@Summary		Get car information
+//	@Description	Returns information about a specific car by its ID
 //	@Tags			Car
 //	@Produce		json
-//	@Success		200	{object}	dto.CarStatusResponse
-//	@Failure		500	{object}	dto.CarStatusResponse
-//	@Router			/api/car-status [get]
-func (h *CarHandler) GetCarStatus(w http.ResponseWriter, r *http.Request) {
-	// id := chi.URLParam(r, "id")
-	response := h.service.GetCarStatus()
+//	@Param			id	path		string	true	"Car ID (UUID)"
+//	@Success		200	{object}	models.Car
+//	@Failure		400	{string}	string	"Invalid car ID"
+//	@Failure		404	{string}	string	"Car not found"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/api/cars/{id}/info [get]
+func (h *CarHandler) GetCarInfo(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(
-			w,
-			"Internal Server Error",
-			http.StatusInternalServerError,
-		)
+	carID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid car id", http.StatusBadRequest)
 		return
 	}
+
+	car, err := h.service.GetCarInfo(r.Context(), carID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(car)
 }
 
 // CarStream godoc
@@ -112,14 +119,14 @@ func (h *CarHandler) GetCarsList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *CarHandler) CarGetSessionId(ctx context.Context, payload dto.CarsSessionRequest) string {
+func (h *CarHandler) CarGetSessionId(ctx context.Context, payload dto.CarsSessionRequest) uuid.UUID {
 	if payload.Key != h.service.app.Config.MQTTCarSessionKey {
-		return "Wrong session key"
+		return uuid.Nil
 	}
 
 	sessionID, err := h.service.CarGetSessionId(ctx)
 	if err != nil {
-		return err.Error()
+		return uuid.Nil
 	}
 
 	return sessionID

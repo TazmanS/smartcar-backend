@@ -6,8 +6,8 @@ import (
 
 func RegisterCarsRoutes(r chi.Router, handler *CarHandler) {
 	r.Post("/cars/list", handler.GetCarsList)
-	r.Get("/cars/{id}/status", handler.GetCarStatus)
+	r.Get("/cars/{id}/info", handler.GetCarInfo)
 
-	r.Get("/car-stream", handler.CarStream)
+	r.Get("/cars/{id}/stream", handler.CarStream)
 	r.Post("/car-actions", handler.CarActions)
 }

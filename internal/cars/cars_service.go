@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
@@ -51,11 +53,8 @@ func NewCarService(app *app.App, repo *Repository) *CarService {
 	}
 }
 
-func (s *CarService) GetCarStatus() dto.CarStatusResponse {
-	return dto.CarStatusResponse{
-		Status:  "ok",
-		Message: "SmartCar backend is running!",
-	}
+func (s *CarService) GetCarInfo(ctx context.Context, id uuid.UUID) (models.Car, error) {
+	return s.repo.GetCarInfo(ctx, id)
 }
 
 func (s *CarService) CarStream(w http.ResponseWriter, r *http.Request) error {
@@ -94,8 +93,8 @@ func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
 	)
 }
 
-func (s *CarService) CarGetSessionId(ctx context.Context) (string, error) {
-	sessionID := uuid.New().String()
+func (s *CarService) CarGetSessionId(ctx context.Context) (uuid.UUID, error) {
+	sessionID := uuid.New()
 
 	car := &models.Car{
 		ID:   sessionID,
@@ -103,7 +102,7 @@ func (s *CarService) CarGetSessionId(ctx context.Context) (string, error) {
 	}
 
 	if err := s.repo.Create(ctx, car); err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 
 	return sessionID, nil
@@ -142,4 +141,15 @@ func (s *CarService) GetCarsList(ctx context.Context, req *dto.GetCarsListReques
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+func (s *CarService) StartCleanupTask() {
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := s.repo.DeleteInactiveCars(context.Background()); err != nil {
+			log.Printf("cleanup error: %v", err)
+		}
+	}
 }

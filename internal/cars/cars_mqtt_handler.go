@@ -10,11 +10,12 @@ import (
 	"github.com/TazmanS/smartcar-backend/internal/logger"
 	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 )
 
 type SessionIDResponse struct {
-	SessionID string `json:"session_id"`
-	RandomID  uint32 `json:"random_id"`
+	SessionID uuid.UUID `json:"session_id"`
+	RandomID  uint32    `json:"random_id"`
 }
 
 type MQTTHandler struct {

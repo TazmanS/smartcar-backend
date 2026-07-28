@@ -2,11 +2,14 @@ package cars
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/TazmanS/smartcar-backend/internal/cars/dto"
 	"github.com/TazmanS/smartcar-backend/internal/cars/models"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -85,6 +88,38 @@ func (r *Repository) GetCarsList(ctx context.Context, req *dto.GetCarsListReques
 	return cars, totalItems, nil
 }
 
+func (r *Repository) GetCarInfo(ctx context.Context, id uuid.UUID) (models.Car, error) {
+	const query = `
+		SELECT
+			id,
+			name,
+			last_seen,
+			created_at,
+			updated_at
+		FROM app.cars
+		WHERE id = $1;
+	`
+
+	var car models.Car
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&car.ID,
+		&car.Name,
+		&car.LastSeen,
+		&car.CreatedAt,
+		&car.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Car{}, fmt.Errorf("car not found")
+		}
+
+		return models.Car{}, fmt.Errorf("get car info: %w", err)
+	}
+
+	return car, nil
+}
+
 func (r *Repository) CarHeartbeat(ctx context.Context, req dto.CarsHeartbeatRequest) error {
 	const query = `
 		UPDATE app.cars
@@ -102,4 +137,14 @@ func (r *Repository) CarHeartbeat(ctx context.Context, req dto.CarsHeartbeatRequ
 	}
 
 	return nil
+}
+
+func (r *Repository) DeleteInactiveCars(ctx context.Context) error {
+	const query = `
+		DELETE FROM app.cars
+		WHERE last_seen < NOW() - INTERVAL '60 seconds';
+	`
+
+	_, err := r.db.Exec(ctx, query)
+	return err
 }

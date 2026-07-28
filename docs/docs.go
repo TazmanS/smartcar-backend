@@ -58,32 +58,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/car-status": {
-            "get": {
-                "description": "Returns current car status",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Car"
-                ],
-                "summary": "Get car status",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CarStatusResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CarStatusResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/api/car-stream": {
             "get": {
                 "description": "Returns current car stream",
@@ -149,6 +123,53 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/cars/{id}/info": {
+            "get": {
+                "description": "Returns information about a specific car by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Car"
+                ],
+                "summary": "Get car information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Car ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Car"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid car ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Car not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -174,17 +195,6 @@ const docTemplate = `{
             "properties": {
                 "action": {
                     "$ref": "#/definitions/dto.CarAction"
-                }
-            }
-        },
-        "dto.CarStatusResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -243,19 +253,19 @@ const docTemplate = `{
         "models.Car": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "lastSeen": {
+                "last_seen": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }
