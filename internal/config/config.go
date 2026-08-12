@@ -20,7 +20,9 @@ type Config struct {
 	MQTTPort          string
 	MQTTCarSessionKey string
 
-	ESP32URL string
+	ESP32URL    string
+	BackendHost string
+	BackendPort string
 }
 
 func Load() *Config {
@@ -38,6 +40,8 @@ func Load() *Config {
 		MQTTPort:          getEnv("MQTT_PORT", "1883"),
 		MQTTCarSessionKey: getEnv("MQTT_CAR_SESSION_KEY", "smartcar-esp32"),
 		ESP32URL:          getEnv("ESP32_URL", "http://192.168.31.111"),
+		BackendHost:       getEnv("BACKEND_HOST", "http://192.168.31.210"),
+		BackendPort:       getEnv("BACKEND_PORT", "8080"),
 	}
 }
 

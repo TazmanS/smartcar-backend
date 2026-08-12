@@ -9,6 +9,7 @@ type GetCarsListRequest struct {
 	SortBy  string `json:"sort_by"`
 	Order   string `json:"order"` // asc | desc
 }
+
 type PageInfo struct {
 	Page       int `json:"page"`
 	PerPage    int `json:"per_page"`

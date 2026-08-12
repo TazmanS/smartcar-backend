@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/google/uuid"
+
 type CarsHeartbeatRequest struct {
-	SessionID uint32 `json:"session_id"`
+	SessionID uuid.UUID `json:"session_id"`
 }

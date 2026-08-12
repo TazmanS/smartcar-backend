@@ -48,7 +48,7 @@ func main() {
 	carService := cars.NewCarService(app, carsRepo)
 	go carService.StartCleanupTask()
 
-	if err := mqttClient.Subscribe(mqtt.MQTTTopicSession, carsMQTTHandler.HandleMQTTSessionMessage); err != nil {
+	if err := mqttClient.Subscribe(mqtt.MQTTSubSessionId, carsMQTTHandler.HandleMQTTSessionMessage); err != nil {
 		log.Fatal(err)
 	}
 

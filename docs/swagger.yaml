@@ -101,19 +101,6 @@ paths:
       summary: Send car action
       tags:
       - Car
-  /api/car-stream:
-    get:
-      description: Returns current car stream
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Internal Server Error
-      summary: Get car camera stream
-      tags:
-      - Car
   /api/cars/{id}/info:
     get:
       description: Returns information about a specific car by its ID
@@ -143,6 +130,31 @@ paths:
           schema:
             type: string
       summary: Get car information
+      tags:
+      - Car
+  /api/cars/{id}/stream:
+    get:
+      description: Sends a command to the specified car to start the camera stream
+      parameters:
+      - description: Car ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid car ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Start car camera stream
       tags:
       - Car
   /api/cars/list:

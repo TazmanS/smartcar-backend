@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
+	"sync"
 	"time"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
@@ -42,14 +42,17 @@ var carNames = []string{
 }
 
 type CarService struct {
-	app  *app.App
-	repo *Repository
+	app     *app.App
+	repo    *Repository
+	mu      sync.Mutex
+	streams map[uuid.UUID]http.ResponseWriter
 }
 
 func NewCarService(app *app.App, repo *Repository) *CarService {
 	return &CarService{
-		app:  app,
-		repo: repo,
+		app:     app,
+		repo:    repo,
+		streams: make(map[uuid.UUID]http.ResponseWriter),
 	}
 }
 
@@ -57,23 +60,17 @@ func (s *CarService) GetCarInfo(ctx context.Context, id uuid.UUID) (models.Car, 
 	return s.repo.GetCarInfo(ctx, id)
 }
 
-func (s *CarService) CarStream(w http.ResponseWriter, r *http.Request) error {
-	target, err := url.Parse(s.app.Config.ESP32URL)
-	if err != nil {
-		return err
-	}
+func (s *CarService) CarStream(carID uuid.UUID) error {
+	topic := fmt.Sprintf("%s/%s", mqtt.MQTTTopicActions, carID)
 
-	proxy := &httputil.ReverseProxy{
-		Rewrite: func(pr *httputil.ProxyRequest) {
-			pr.SetURL(target)
-			pr.Out.URL.Path = "/stream"
-		},
-		FlushInterval: -1,
-	}
+	payload := fmt.Sprintf(
+		`{"action":"start_stream","url":"%s:%s/api/cars/%s/stream"}`,
+		s.app.Config.BackendHost,
+		s.app.Config.BackendPort,
+		carID,
+	)
 
-	proxy.ServeHTTP(w, r)
-
-	return nil
+	return s.app.MQTT.Publish(topic, payload)
 }
 
 func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
@@ -152,4 +149,42 @@ func (s *CarService) StartCleanupTask() {
 			log.Printf("cleanup error: %v", err)
 		}
 	}
+}
+
+func (s *CarService) GetStreamWriter(carID uuid.UUID) (http.ResponseWriter, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	w, ok := s.streams[carID]
+
+	return w, ok
+}
+
+func (s *CarService) RegisterStream(carID uuid.UUID, w http.ResponseWriter) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.streams[carID]; exists {
+		return fmt.Errorf("stream is already occupied")
+	}
+
+	s.streams[carID] = w
+
+	return nil
+}
+
+func (s *CarService) UnregisterStream(carID uuid.UUID) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.streams, carID)
+}
+
+func (s *CarService) CarStreamStop(carID uuid.UUID) error {
+	topic := fmt.Sprintf("%s/%s", mqtt.MQTTTopicActions, carID)
+
+	return s.app.MQTT.Publish(
+		topic,
+		`{"action":"stop_stream"}`,
+	)
 }

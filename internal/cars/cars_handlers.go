@@ -3,6 +3,8 @@ package cars
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/TazmanS/smartcar-backend/internal/app"
@@ -53,17 +55,92 @@ func (h *CarHandler) GetCarInfo(w http.ResponseWriter, r *http.Request) {
 
 // CarStream godoc
 //
-//	@Summary		Get car camera stream
-//	@Description	Returns current car stream
+//	@Summary		Start car camera stream
+//	@Description	Sends a command to the specified car to start the camera stream
 //	@Tags			Car
 //	@Produce		json
+//	@Param			id	path		string	true	"Car ID (UUID)"
 //	@Success		200
-//	@Failure		500
-//	@Router			/api/car-stream [get]
+//	@Failure		400	{string}	string	"Invalid car ID"
+//	@Failure		500	{string}	string	"Internal Server Error"
+//	@Router			/api/cars/{id}/stream [get]
 func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
-	if err := h.service.CarStream(w, r); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	id := chi.URLParam(r, "id")
+
+	carID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid car id", http.StatusBadRequest)
+		return
 	}
+
+	if err := h.service.RegisterStream(carID, w); err != nil {
+		http.Error(w, err.Error(), http.StatusConflict)
+		return
+	}
+
+	defer h.service.UnregisterStream(carID)
+
+	w.Header().Set(
+		"Content-Type",
+		"multipart/x-mixed-replace; boundary=frame",
+	)
+
+	w.WriteHeader(http.StatusOK)
+
+	if err := h.service.CarStream(carID); err != nil {
+		return
+	}
+
+	<-r.Context().Done()
+
+	if err := h.service.CarStreamStop(carID); err != nil {
+		log.Printf("failed to stop stream car=%s: %v", carID, err)
+	}
+}
+
+func (h *CarHandler) CarStreamUpload(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	carID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid car id", http.StatusBadRequest)
+		return
+	}
+
+	frontendWriter, ok := h.service.GetStreamWriter(carID)
+	if !ok {
+		http.Error(w, "no active stream", http.StatusNotFound)
+		return
+	}
+
+	_, err = io.Copy(frontendWriter, r.Body)
+
+	if err != nil {
+		log.Printf("stream ended car=%s: %v", carID, err)
+	} else {
+		log.Printf("stream ended car=%s", carID)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *CarHandler) CarStreamStop(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	carID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid car id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CarStreamStop(carID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	h.service.UnregisterStream(carID)
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // CarActions godoc

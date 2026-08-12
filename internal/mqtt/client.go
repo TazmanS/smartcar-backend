@@ -10,9 +10,11 @@ import (
 )
 
 const (
-	MQTTTopicActions   = "smartcar/actions"
-	MQTTTopicSession   = "smartcar/session_id"
-	MQTTTopicHeartbeat = "smartcar/heartbeat"
+	MQTTTopicActions   = "smartcar/actions_topic"
+	MQTTTopicSessionId = "smartcar/session_id_topic"
+	MQTTTopicHeartbeat = "smartcar/heartbeat_topic"
+
+	MQTTSubSessionId = "smartcar/session_id_sub"
 )
 
 type Client struct {

@@ -49,13 +49,14 @@ func (h *MQTTHandler) HandleMQTTSessionMessage(client paho.Client, msg paho.Mess
 		SessionID: sessionID,
 		RandomID:  req.RandomID,
 	})
-	h.app.MQTT.Publish(mqtt.MQTTTopicSession, string(msgPublish))
+	h.app.MQTT.Publish(mqtt.MQTTTopicSessionId, string(msgPublish))
 }
 
 func (h *MQTTHandler) HandleMQTTHeartbeat(client paho.Client, msg paho.Message) {
-	logger.Info("Heartbeat received",
-		"topic", msg.Topic(),
-		"payload", string(msg.Payload()))
+	// logger.Info("Heartbeat received",
+	// 	"topic", msg.Topic(),
+	// 	"payload", string(msg.Payload()),
+	// )
 
 	ctx := context.Background()
 	var req cars_dto.CarsHeartbeatRequest

@@ -58,26 +58,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/car-stream": {
-            "get": {
-                "description": "Returns current car stream",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Car"
-                ],
-                "summary": "Get car camera stream",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
         "/api/cars/list": {
             "post": {
                 "description": "Returns a paginated list of registered cars",
@@ -158,6 +138,44 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Car not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cars/{id}/stream": {
+            "get": {
+                "description": "Sends a command to the specified car to start the camera stream",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Car"
+                ],
+                "summary": "Start car camera stream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Car ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Invalid car ID",
                         "schema": {
                             "type": "string"
                         }
