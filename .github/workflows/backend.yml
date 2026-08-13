@@ -1,4 +1,4 @@
-name: Build and publish backend image
+name: Build and publish backend images
 
 on:
   push:
@@ -11,7 +11,8 @@ permissions:
 
 env:
   DOCKERHUB_USERNAME: tazmans
-  IMAGE_NAME: smartcar-backend
+  BACKEND_IMAGE_NAME: smartcar-backend
+  MIGRATIONS_IMAGE_NAME: smartcar-migrations
 
 jobs:
   version:
@@ -74,13 +75,27 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           provenance: false
           sbom: false
-          tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.version.outputs.backend_version }}
+          tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ needs.version.outputs.backend_version }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build and push migrations
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.migrations
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          sbom: false
+          tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.MIGRATIONS_IMAGE_NAME }}:${{ needs.version.outputs.backend_version }}
+          cache-from: type=gha,scope=migrations
+          cache-to: type=gha,mode=max,scope=migrations
 
   release:
     needs:
@@ -104,7 +119,7 @@ jobs:
 
       - name: Commit version change
         run: |
-          git config user.name "Smartcar CI"
+          git config user.name "SmartCar CI"
           git config user.email "ci@smartcar.local"
 
           git add VERSION
