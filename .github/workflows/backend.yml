@@ -130,3 +130,61 @@ jobs:
             git commit -m "ci: bump backend version [skip ci]"
             git push
           fi
+
+  deploy:
+    needs:
+      - version
+      - release
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout deployment repository
+        uses: actions/checkout@v4
+        with:
+          repository: TazmanS/smartcar-devops
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
+          path: deployment
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          sudo wget -O /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Show yq version
+        run: yq --version
+
+      - name: Update backend image version
+        working-directory: deployment
+        run: |
+          yq -i '
+            .spec.template.spec.containers[0].image =
+            "tazmans/smartcar-backend:${{ needs.version.outputs.backend_version }}"
+          ' kubernetes/base/backend/deployment.yaml
+
+      - name: Update migrations image version
+        working-directory: deployment
+        run: |
+          yq -i '
+            .spec.template.spec.containers[0].image =
+            "tazmans/smartcar-migrations:${{ needs.version.outputs.backend_version }}"
+          ' kubernetes/base/migrations/job.yaml
+
+      - name: Commit deployment changes
+        working-directory: deployment
+        run: |
+          git config user.name "SmartCar CI"
+          git config user.email "ci@smartcar.local"
+
+          git add \
+            kubernetes/base/backend/deployment.yaml \
+            kubernetes/base/migrations/job.yaml
+
+          if git diff --cached --quiet; then
+            echo "No deployment changes"
+          else
+            git commit -m "ci: update backend image versions"
+            git push
+          fi
