@@ -64,9 +64,8 @@ func (s *CarService) CarStream(carID uuid.UUID) error {
 	topic := fmt.Sprintf("%s/%s", mqtt.MQTTTopicActions, carID)
 
 	payload := fmt.Sprintf(
-		`{"action":"start_stream","url":"%s:%s/api/cars/%s/stream"}`,
+		`{"action":"start_stream","url":"%s/api/cars/%s/stream"}`,
 		s.app.Config.BackendHost,
-		s.app.Config.BackendPort,
 		carID,
 	)
 
