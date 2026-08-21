@@ -1,6 +1,8 @@
 package mqtt
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -30,8 +32,16 @@ func New(cfg *config.Config) (*Client, error) {
 		cfg.MQTTPort,
 	)
 
+	idBytes := make([]byte, 8)
+
+	if _, err := rand.Read(idBytes); err != nil {
+		return nil, err
+	}
+
+	clientID := "smartcar-backend-" + hex.EncodeToString(idBytes)
+
 	opts.AddBroker(broker)
-	opts.SetClientID("smartcar-backend")
+	opts.SetClientID(clientID)
 
 	opts.SetAutoReconnect(true)
 	opts.SetConnectRetry(true)
