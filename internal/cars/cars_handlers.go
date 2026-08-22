@@ -87,6 +87,14 @@ func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	flusher.Flush()
+
 	if err := h.service.CarStream(carID); err != nil {
 		return
 	}
@@ -94,7 +102,11 @@ func (h *CarHandler) CarStream(w http.ResponseWriter, r *http.Request) {
 	<-r.Context().Done()
 
 	if err := h.service.CarStreamStop(carID); err != nil {
-		log.Printf("failed to stop stream car=%s: %v", carID, err)
+		log.Printf(
+			"failed to stop stream car=%s: %v",
+			carID,
+			err,
+		)
 	}
 }
 
@@ -113,13 +125,48 @@ func (h *CarHandler) CarStreamUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = io.Copy(frontendWriter, r.Body)
-
-	if err != nil {
-		log.Printf("stream ended car=%s: %v", carID, err)
-	} else {
-		log.Printf("stream ended car=%s", carID)
+	flusher, ok := frontendWriter.(http.Flusher)
+	if !ok {
+		http.Error(
+			w,
+			"frontend stream does not support flushing",
+			http.StatusInternalServerError,
+		)
+		return
 	}
+
+	buf := make([]byte, 4096)
+
+	for {
+		n, err := r.Body.Read(buf)
+
+		if n > 0 {
+			if _, writeErr := frontendWriter.Write(buf[:n]); writeErr != nil {
+				log.Printf(
+					"stream write failed car=%s: %v",
+					carID,
+					writeErr,
+				)
+				return
+			}
+
+			flusher.Flush()
+		}
+
+		if err != nil {
+			if err != io.EOF {
+				log.Printf(
+					"stream read failed car=%s: %v",
+					carID,
+					err,
+				)
+			}
+
+			break
+		}
+	}
+
+	log.Printf("stream ended car=%s", carID)
 
 	w.WriteHeader(http.StatusOK)
 }
