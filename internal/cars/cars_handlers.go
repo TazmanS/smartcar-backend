@@ -203,8 +203,17 @@ func (h *CarHandler) CarStreamStop(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{string}	string	"Internal Server Error"
 //	@Router			/api/car-actions [post]
 func (h *CarHandler) CarActions(w http.ResponseWriter, r *http.Request) {
-	if err := h.service.CarActions(w, r); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	id := chi.URLParam(r, "id")
+
+	carID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid car id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.CarActions(carID, r); err != nil {
+		http.Error(w, err.Error(), http.StatusConflict)
+		return
 	}
 }
 

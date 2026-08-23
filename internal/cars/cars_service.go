@@ -72,7 +72,7 @@ func (s *CarService) CarStream(carID uuid.UUID) error {
 	return s.app.MQTT.Publish(topic, payload)
 }
 
-func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
+func (s *CarService) CarActions(carID uuid.UUID, r *http.Request) error {
 	var request dto.CarActionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -82,11 +82,14 @@ func (s *CarService) CarActions(w http.ResponseWriter, r *http.Request) error {
 	if !request.Action.IsValid() {
 		return errors.New("invalid action")
 	}
+	topic := fmt.Sprintf("%s/%s", mqtt.MQTTTopicActions, carID)
 
-	return s.app.MQTT.Publish(
-		mqtt.MQTTTopicActions,
+	payload := fmt.Sprintf(
+		`{"action":"%s"}`,
 		string(request.Action),
 	)
+
+	return s.app.MQTT.Publish(topic, payload)
 }
 
 func (s *CarService) CarGetSessionId(ctx context.Context) (uuid.UUID, error) {
