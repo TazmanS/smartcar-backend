@@ -70,3 +70,10 @@ func (h *MQTTHandler) HandleMQTTHeartbeat(client paho.Client, msg paho.Message) 
 		log.Printf("Failed to process heartbeat: %v", err)
 	}
 }
+
+func (h *MQTTHandler) HandleMQTTMessage(client paho.Client, msg paho.Message) {
+	logger.Info("MQTT Message",
+		"topic", msg.Topic(),
+		"payload", string(msg.Payload()),
+	)
+}

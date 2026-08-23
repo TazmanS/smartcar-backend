@@ -15,6 +15,7 @@ const (
 	MQTTTopicActions   = "smartcar/actions_topic"
 	MQTTTopicSessionId = "smartcar/session_id_topic"
 	MQTTTopicHeartbeat = "smartcar/heartbeat_topic"
+	MQTTMessage        = "smartcar/message_topic"
 
 	MQTTSubSessionId = "smartcar/session_id_sub"
 )

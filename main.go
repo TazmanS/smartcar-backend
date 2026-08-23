@@ -56,6 +56,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := mqttClient.Subscribe(mqtt.MQTTMessage, carsMQTTHandler.HandleMQTTMessage); err != nil {
+		log.Fatal(err)
+	}
+
 	router := routes.NewRouter()
 
 	router.Route("/api", func(api chi.Router) {
