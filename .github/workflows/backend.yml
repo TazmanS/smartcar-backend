@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - dev
+
   workflow_dispatch:
 
 permissions:
@@ -19,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      backend_version: ${{ steps.update_backend.outputs.backend_version }}
+      backend_version: ${{ steps.update_version.outputs.backend_version }}
 
     steps:
       - name: Checkout repository
@@ -28,31 +30,59 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Update backend version
-        id: update_backend
+      - name: Update version
+        id: update_version
         run: |
-          VERSION=$(cat VERSION)
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
 
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            VERSION=$(cat VERSION)
 
-          PATCH=$((PATCH + 1))
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
 
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+            PATCH=$((PATCH + 1))
 
-          echo "$NEW_VERSION" > VERSION
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-          echo "backend_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+            echo "$NEW_VERSION" > VERSION
 
-          echo "Backend version: $VERSION -> $NEW_VERSION"
+            echo "Production version: ${VERSION} -> ${NEW_VERSION}"
 
-      - name: Upload version file
+            echo "backend_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+          else
+
+            VERSION=$(cat DEV_VERSION)
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+            PATCH=$((PATCH + 1))
+
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+            echo "$NEW_VERSION" > DEV_VERSION
+
+            echo "Development version: ${VERSION} -> ${NEW_VERSION}"
+
+            echo "backend_version=${NEW_VERSION}-dev" >> "$GITHUB_OUTPUT"
+
+          fi
+
+      - name: Upload production version file
+        if: github.ref_name == 'main'
         uses: actions/upload-artifact@v4
         with:
           name: backend-version-files
           path: VERSION
 
+      - name: Upload development version file
+        if: github.ref_name == 'dev'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dev-version
+          path: DEV_VERSION
   build:
     needs: version
+
     runs-on: ubuntu-latest
 
     steps:
@@ -111,13 +141,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Download version file
+      - name: Download production version file
+        if: github.ref_name == 'main'
         uses: actions/download-artifact@v4
         with:
           name: backend-version-files
           path: .
 
-      - name: Commit version change
+      - name: Download development version file
+        if: github.ref_name == 'dev'
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dev-version
+          path: .
+
+      - name: Commit production version
+        if: github.ref_name == 'main'
         run: |
           git config user.name "SmartCar CI"
           git config user.email "ci@smartcar.local"
@@ -128,6 +167,21 @@ jobs:
             echo "No version changes"
           else
             git commit -m "ci: bump backend version [skip ci]"
+            git push
+          fi
+
+      - name: Commit development version
+        if: github.ref_name == 'dev'
+        run: |
+          git config user.name "SmartCar CI"
+          git config user.email "ci@smartcar.local"
+
+          git add DEV_VERSION
+
+          if git diff --cached --quiet; then
+            echo "No version changes"
+          else
+            git commit -m "ci: bump backend dev version [skip ci]"
             git push
           fi
 
@@ -151,12 +205,14 @@ jobs:
         run: |
           sudo wget -O /usr/local/bin/yq \
             https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+
           sudo chmod +x /usr/local/bin/yq
 
       - name: Show yq version
         run: yq --version
 
-      - name: Update backend image version
+      - name: Update production backend image
+        if: github.ref_name == 'main'
         working-directory: deployment
         run: |
           yq -i '
@@ -164,7 +220,8 @@ jobs:
             "tazmans/smartcar-backend:${{ needs.version.outputs.backend_version }}"
           ' kubernetes/base/backend/deployment.yaml
 
-      - name: Update migrations image version
+      - name: Update production migrations image
+        if: github.ref_name == 'main'
         working-directory: deployment
         run: |
           yq -i '
@@ -172,7 +229,26 @@ jobs:
             "tazmans/smartcar-migrations:${{ needs.version.outputs.backend_version }}"
           ' kubernetes/base/migrations/job.yaml
 
-      - name: Commit deployment changes
+      - name: Update development backend image
+        if: github.ref_name == 'dev'
+        working-directory: deployment
+        run: |
+          yq -i '
+            (.images[] | select(.name == "tazmans/smartcar-backend").newTag) =
+            "${{ needs.version.outputs.backend_version }}"
+          ' kubernetes/overlays/dev/kustomization.yaml
+
+      - name: Update development migrations image
+        if: github.ref_name == 'dev'
+        working-directory: deployment
+        run: |
+          yq -i '
+            (.images[] | select(.name == "tazmans/smartcar-migrations").newTag) =
+            "${{ needs.version.outputs.backend_version }}"
+          ' kubernetes/overlays/dev/kustomization.yaml
+
+      - name: Commit production deployment changes
+        if: github.ref_name == 'main'
         working-directory: deployment
         run: |
           git config user.name "SmartCar CI"
@@ -186,5 +262,21 @@ jobs:
             echo "No deployment changes"
           else
             git commit -m "ci: update backend image versions"
+            git push
+          fi
+
+      - name: Commit development deployment changes
+        if: github.ref_name == 'dev'
+        working-directory: deployment
+        run: |
+          git config user.name "SmartCar CI"
+          git config user.email "ci@smartcar.local"
+
+          git add kubernetes/overlays/dev/kustomization.yaml
+
+          if git diff --cached --quiet; then
+            echo "No deployment changes"
+          else
+            git commit -m "ci: update backend dev image versions"
             git push
           fi
