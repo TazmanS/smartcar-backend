@@ -1,8 +1,10 @@
 package cars
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -135,28 +137,15 @@ func (h *CarHandler) CarStreamUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := make([]byte, 4096)
+	reader := NewMJPEGReader(r.Body)
+	frameNumber := 0
 
 	for {
-		n, err := r.Body.Read(buf)
-
-		if n > 0 {
-			if _, writeErr := frontendWriter.Write(buf[:n]); writeErr != nil {
-				log.Printf(
-					"stream write failed car=%s: %v",
-					carID,
-					writeErr,
-				)
-				return
-			}
-
-			flusher.Flush()
-		}
-
+		frame, err := reader.ReadFrame()
 		if err != nil {
 			if err != io.EOF {
 				log.Printf(
-					"stream read failed car=%s: %v",
+					"failed to read MJPEG frame car=%s: %v",
 					carID,
 					err,
 				)
@@ -164,6 +153,70 @@ func (h *CarHandler) CarStreamUpload(w http.ResponseWriter, r *http.Request) {
 
 			break
 		}
+
+		frameNumber++
+
+		if frameNumber == 100 {
+			frameCopy := bytes.Clone(frame)
+
+			go func() {
+				result, err := h.service.cv.Detect(
+					context.Background(),
+					frameCopy,
+				)
+
+				if err != nil {
+					log.Printf("CV detection failed car=%s: %v", carID, err)
+				} else {
+					if err := h.service.SendDetection(carID, result); err != nil {
+						log.Printf("failed to send detection car=%s: %v", carID, err)
+					}
+				}
+			}()
+
+			frameNumber = 0
+		}
+
+		mjpegHeader := fmt.Sprintf(
+			"--frame\r\n"+
+				"Content-Type: image/jpeg\r\n"+
+				"Content-Length: %d\r\n"+
+				"\r\n",
+			len(frame),
+		)
+
+		if _, err := frontendWriter.Write(
+			[]byte(mjpegHeader),
+		); err != nil {
+			log.Printf(
+				"stream header write failed car=%s: %v",
+				carID,
+				err,
+			)
+			return
+		}
+
+		if _, err := frontendWriter.Write(frame); err != nil {
+			log.Printf(
+				"stream frame write failed car=%s: %v",
+				carID,
+				err,
+			)
+			return
+		}
+
+		if _, err := frontendWriter.Write(
+			[]byte("\r\n"),
+		); err != nil {
+			log.Printf(
+				"stream separator write failed car=%s: %v",
+				carID,
+				err,
+			)
+			return
+		}
+
+		flusher.Flush()
 	}
 
 	log.Printf("stream ended car=%s", carID)
