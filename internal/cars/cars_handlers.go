@@ -131,7 +131,7 @@ func (h *CarHandler) CarStreamUpload(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(
 			w,
-			"frontend stream does not support flushing",
+			"error: frontend stream does not support flushing",
 			http.StatusInternalServerError,
 		)
 		return
