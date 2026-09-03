@@ -16,6 +16,7 @@ import (
 	"github.com/TazmanS/smartcar-backend/internal/cars/models"
 	"github.com/TazmanS/smartcar-backend/internal/mqtt"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 var carNames = []string{
@@ -46,6 +47,8 @@ type CarService struct {
 	repo    *Repository
 	mu      sync.Mutex
 	streams map[uuid.UUID]http.ResponseWriter
+	sockets map[uuid.UUID]*websocket.Conn
+	cv      *CVClient
 }
 
 func NewCarService(app *app.App, repo *Repository) *CarService {
@@ -53,6 +56,8 @@ func NewCarService(app *app.App, repo *Repository) *CarService {
 		app:     app,
 		repo:    repo,
 		streams: make(map[uuid.UUID]http.ResponseWriter),
+		sockets: make(map[uuid.UUID]*websocket.Conn),
+		cv:      NewCVClient(app),
 	}
 }
 
@@ -188,5 +193,20 @@ func (s *CarService) CarStreamStop(carID uuid.UUID) error {
 	return s.app.MQTT.Publish(
 		topic,
 		`{"action":"stop_stream"}`,
+	)
+}
+
+func (s *CarService) SendDetection(carID uuid.UUID, data []byte) error {
+	s.mu.Lock()
+	socket, ok := s.sockets[carID]
+	s.mu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("no active socket for car %s", carID)
+	}
+
+	return socket.WriteMessage(
+		websocket.TextMessage,
+		data,
 	)
 }
